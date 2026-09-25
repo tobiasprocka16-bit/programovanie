@@ -42,9 +42,10 @@ while True:
       if odpoved =="ano":
             zlava= celkova_cena * 0.10
             celkova_cena -= zlava
-            print("Super tu je vaša nová cena: (cena_kosik)€")
+            print(f"Super tu je vaša nová cena: {celkova_cena} €")
             break
 
     
+
 
 
