@@ -27,6 +27,23 @@ for polozka in kosik:
             cena , kategoria , kusy = sklad[polozka]
             print(f"{polozka} stoji {cena} eur a je to {kategoria} a je ich {kusy} kusov")
 
+for polozka in kosik:
+
+      cena , kategoria , kusy = sklad[polozka]
+      print(f"\nVáš nakup stoji {celkova_cena} €")
+
+print("----------------------------------")
+
+while True:
+      print("Mate 10% kupon?")
+      odpoved = input()
+      if odpoved =="nie":
+            break
+      if odpoved =="ano":
+            zlava= celkova_cena * 0.10
+            celkova_cena -= zlava
+            print("Super tu je vaša nová cena: (cena_kosik)€")
+            break
 
     
 
