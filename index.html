@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Obchod</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1d2330; --muted:#6b7280; --accent:#2563eb; --line:#e5e7eb; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14171d; --card:#1e232c; --text:#e8eaf0; --muted:#9aa3b2; --accent:#4f8cff; --line:#2d3441; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+  h1 { margin: 0 0 4px; }
+  .sub { color: var(--muted); margin-bottom: 20px; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
+  h2 { margin:0 0 12px; font-size:1.1rem; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--line); }
+  .row:last-child { border-bottom:none; }
+  .muted { color:var(--muted); font-size:.85rem; }
+  button { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; font-size:.9rem; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  button.sec { background:transparent; color:var(--text); border:1px solid var(--line); }
+  .total { font-size:1.3rem; font-weight:600; margin:12px 0; }
+  #msg { min-height:1.4em; margin-bottom:12px; font-size:.95rem; }
+  .err { color:#dc2626; }
+  .ok { color:#16a34a; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Vitajte v obchode</h1>
+  <div class="sub">Toto je náš sklad. Pridajte si položky do košíka.</div>
+  <div id="msg"></div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Sklad</h2>
+      <div id="sklad"></div>
+    </section>
+
+    <section class="card">
+      <h2>Košík</h2>
+      <div id="kosik"></div>
+      <div class="total" id="total">Spolu: 0 €</div>
+      <button id="btnZlava">Mám 10 % kupón</button>
+      <button class="sec" id="btnReset">Reset</button>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function sprava(text, chyba = false) {
+  const el = $("msg");
+  el.textContent = text;
+  el.className = chyba ? "err" : "ok";
+}
+
+async function api(url, method = "GET") {
+  const res = await fetch(url, { method });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Chyba");
+  return data;
+}
+
+function vykresliKosik(k) {
+  $("kosik").innerHTML = k.polozky.length
+    ? k.polozky.map(p => `
+        <div class="row">
+          <div><strong>${p.nazov}</strong> × ${p.pocet}
+            <div class="muted">${p.kategoria} · ${p.cena} € / ks · na sklade ${p.na_sklade} ks</div>
+          </div>
+          <div>${(p.cena * p.pocet).toFixed(2)} €</div>
+        </div>`).join("")
+    : '<div class="muted">Košík je prázdny.</div>';
+  $("total").textContent = `Spolu: ${k.celkova_cena.toFixed(2)} €` + (k.zlava ? " (so zľavou 10 %)" : "");
+  $("btnZlava").disabled = k.zlava || !k.polozky.length;
+}
+
+async function nacitajSklad() {
+  const sklad = await api("/api/sklad");
+  $("sklad").innerHTML = sklad.map(p => `
+    <div class="row">
+      <div><strong>${p.nazov}</strong>
+        <div class="muted">${p.kategoria} · ${p.cena} € · ${p.kusy} ks</div>
+      </div>
+      <button ${p.kusy <= 0 ? "disabled" : ""} onclick="pridaj('${p.nazov}')">Pridať</button>
+    </div>`).join("");
+}
+
+async function pridaj(nazov) {
+  try {
+    const d = await api(`/api/kosik/${nazov}`, "POST");
+    sprava(d.sprava);
+    vykresliKosik(d);
+    nacitajSklad();
+  } catch (e) { sprava(e.message, true); }
+}
+
+$("btnZlava").onclick = async () => {
+  try {
+    const d = await api("/api/zlava", "POST");
+    sprava(d.sprava);
+    vykresliKosik(d);
+  } catch (e) { sprava(e.message, true); }
+};
+
+$("btnReset").onclick = async () => {
+  const d = await api("/api/reset", "POST");
+  sprava(d.sprava);
+  vykresliKosik(d);
+  nacitajSklad();
+};
+
+(async () => {
+  vykresliKosik(await api("/api/kosik"));
+  nacitajSklad();
+})();
+</script>
+</body>
+</html>
