@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 app = FastAPI(title="Obchod")
 
 # názov: (cena, kategória, kusy)
-SKLAD_PUVODNY = {
+SKLAD_POVODNY = {
     "jablko": (1.0, "ovocie", 2),
     "ananas": (1.3, "ovocie", 500),
     "mrkva": (0.2, "zelenina", 800),
@@ -15,7 +15,7 @@ SKLAD_PUVODNY = {
     "kinder": (1.5, "sladkosti", 400),  # hlavný kód 
 }
 
-sklad = copy.deepcopy(SKLAD_PUVODNY)
+sklad = copy.deepcopy(SKLAD_POVODNY)
 kosik = []
 stav = {"zlava": False}
 
@@ -102,7 +102,7 @@ def pouzi_kupon():
 @app.post("/api/reset")
 def reset():
     global sklad
-    sklad = copy.deepcopy(SKLAD_PUVODNY)
+    sklad = copy.deepcopy(SKLAD_POVODNY)
     kosik.clear()
     stav["zlava"] = False
     return {"sprava": "Obchod bol resetovaný.", **vypis_kosika()}
