@@ -12,7 +12,7 @@ SKLAD_PUVODNY = {
     "ananas": (1.3, "ovocie", 500),
     "mrkva": (0.2, "zelenina", 800),
     "kitkat": (0.8, "sladkosti", 300),
-    "kinder": (1.5, "sladkosti", 400),  # v obrázku bolo číslo orezané, uprav podľa potreby
+    "kinder": (1.5, "sladkosti", 400),  # hlavný kód 
 }
 
 sklad = copy.deepcopy(SKLAD_PUVODNY)
@@ -35,7 +35,7 @@ def spocitaj_cenu():
 
 def vypis_kosika():
     polozky = []
-    for nazov in dict.fromkeys(kosik):  # unikátne, v poradí pridania
+    for nazov in dict.fromkeys(kosik):  
         cena, kategoria, kusy = sklad[nazov]
         polozky.append(
             {
