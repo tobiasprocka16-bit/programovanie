@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Obchod – Admin</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1d2330;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --ok: #16a34a;
+    --warn: #d97706;
+    --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1218;
+      --card: #181c25;
+      --text: #e6e8ee;
+      --muted: #9aa3b2;
+      --border: #2a2f3b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  header h1 { margin: 0; font-size: 20px; }
+  header .badge {
+    font-size: 12px;
+    background: var(--accent);
+    color: #fff;
+    padding: 3px 9px;
+    border-radius: 999px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .stat .label { font-size: 12px; color: var(--muted); }
+  .stat .value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+  .nazov { font-weight: 600; text-transform: capitalize; }
+  .kat {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  .kusy { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .kusy.low { color: var(--warn); }
+  .kusy.zero { color: var(--bad); }
+  .kusy.flash { animation: flash .8s; }
+  @keyframes flash {
+    0% { color: var(--ok); transform: scale(1.25); }
+    100% { transform: scale(1); }
+  }
+  .actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  input[type=number] {
+    width: 80px;
+    padding: 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+  }
+  button {
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    padding: 7px 11px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  button.primary:hover { background: var(--accent-dark); }
+  button.danger { color: var(--bad); }
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #111827;
+    color: #fff;
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    opacity: 0;
+    transition: all .25s;
+    max-width: 90vw;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  #toast.error { background: var(--bad); }
+  @media (max-width: 640px) {
+    th:nth-child(2), td:nth-child(2) { display: none; }
+    th, td { padding: 10px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Obchod <span class="badge">ADMIN</span></h1>
+  <div>
+    <a href="/" style="color: var(--accent); text-decoration: none; font-size: 14px; margin-right: 12px;">← Do obchodu</a>
+    <button class="danger" onclick="resetObchod()">Reset obchodu</button>
+  </div>
+</header>
+
+<main>
+  <div class="stats">
+    <div class="stat"><div class="label">Druhov tovaru</div><div class="value" id="stat-druhy">–</div></div>
+    <div class="stat"><div class="label">Kusov spolu</div><div class="value" id="stat-kusy">–</div></div>
+    <div class="stat"><div class="label">Hodnota skladu</div><div class="value" id="stat-hodnota">–</div></div>
+    <div class="stat"><div class="label">Dochádzajúce / vypredané</div><div class="value" id="stat-low">–</div></div>
+  </div>
+
+  <div class="panel">
+    <table>
+      <thead>
+        <tr>
+          <th>Položka</th>
+          <th>Kategória</th>
+          <th>Cena</th>
+          <th>Na sklade</th>
+          <th>Pridať kusy</th>
+        </tr>
+      </thead>
+      <tbody id="telo"></tbody>
+    </table>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const LOW_LIMIT = 10;
+let toastTimer;
+
+function toast(text, error = false) {
+  const t = document.getElementById("toast");
+  t.textContent = text;
+  t.className = "show" + (error ? " error" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.className = ""), 2600);
+}
+
+async function api(url, method = "GET", body) {
+  const res = await fetch(url, {
+    method,
+    headers: body ? { "Content-Type": "application/json" } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || "Chyba servera");
+  return data;
+}
+
+function kusyClass(k) {
+  if (k <= 0) return "zero";
+  if (k < LOW_LIMIT) return "low";
+  return "";
+}
+
+async function nacitaj(flashNazov) {
+  const sklad = await api("/api/sklad");
+  const telo = document.getElementById("telo");
+  telo.innerHTML = "";
+
+  let spolu = 0, hodnota = 0, low = 0;
+
+  for (const p of sklad) {
+    spolu += p.kusy;
+    hodnota += p.kusy * p.cena;
+    if (p.kusy < LOW_LIMIT) low++;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="nazov">${p.nazov}</td>
+      <td><span class="kat">${p.kategoria}</span></td>
+      <td>${p.cena.toFixed(2)} €</td>
+      <td><span class="kusy ${kusyClass(p.kusy)} ${p.nazov === flashNazov ? "flash" : ""}">${p.kusy}</span></td>
+      <td>
+        <div class="actions">
+          <button onclick="pridaj('${p.nazov}', 1)">+1</button>
+          <button onclick="pridaj('${p.nazov}', 10)">+10</button>
+          <button onclick="pridaj('${p.nazov}', 100)">+100</button>
+          <input type="number" min="1" value="5" id="in-${p.nazov}" aria-label="Počet kusov">
+          <button class="primary" onclick="pridajZInputu('${p.nazov}')">Pridať</button>
+        </div>
+      </td>`;
+    telo.appendChild(tr);
+  }
+
+  document.getElementById("stat-druhy").textContent = sklad.length;
+  document.getElementById("stat-kusy").textContent = spolu.toLocaleString("sk-SK");
+  document.getElementById("stat-hodnota").textContent =
+    hodnota.toLocaleString("sk-SK", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+  document.getElementById("stat-low").textContent = low;
+}
+
+async function pridaj(nazov, pocet) {
+  try {
+    const r = await api(`/api/sklad/${encodeURIComponent(nazov)}/pridaj`, "POST", { pocet });
+    toast(r.sprava);
+    await nacitaj(nazov);
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+function pridajZInputu(nazov) {
+  const v = parseInt(document.getElementById("in-" + nazov).value, 10);
+  if (!Number.isInteger(v) || v <= 0) {
+    toast("Zadaj kladný počet kusov", true);
+    return;
+  }
+  pridaj(nazov, v);
+}
+
+async function resetObchod() {
+  if (!confirm("Naozaj resetovať obchod? Sklad sa vráti na pôvodné hodnoty.")) return;
+  try {
+    const r = await api("/api/reset", "POST");
+    toast(r.sprava);
+    await nacitaj();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+nacitaj().catch(e => toast(e.message, true));
+</script>
+</body>
+</html>
